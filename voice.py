@@ -1,6 +1,5 @@
 import os
 import tempfile
-import winsound
 import numpy as np
 
 import scipy.io.wavfile as wav
@@ -60,20 +59,6 @@ class VoiceIO:
             return " ".join(s.text for s in segments).strip()
         finally:
             os.unlink(path)
-
-    def wait_for_wake_word(self, wake_word: str = "aria") -> None:
-        """Record in 2-second bursts until the wake word is detected."""
-        print("Waiting for 'Hey Aria'...")
-        while True:
-            audio = sd.rec(int(2.0 * SAMPLE_RATE), samplerate=SAMPLE_RATE, channels=1, dtype="float32")
-            sd.wait()
-            audio = audio.flatten()
-            if float(np.abs(audio).mean()) < 0.005:
-                continue
-            text = self.transcribe(audio)
-            if wake_word.lower() in text.lower():
-                winsound.Beep(880, 150)
-                return
 
     def speak(self, text: str):
         """Convert text to speech using ElevenLabs and play it via sounddevice."""
