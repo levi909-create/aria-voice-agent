@@ -23,9 +23,10 @@ def main():
 
     voice = VoiceIO(elevenlabs_api_key=elevenlabs_key, voice_id=voice_id)
     agent = Agent(api_key=anthropic_key)
+    agent.load()
 
     print("\nAria is ready. Start speaking!\n")
-    greeting = "Hey! I'm Aria. What can I help you with?"
+    greeting = "Hey! I'm Aria. What can I help you with?" if not agent.history else "Hey, I'm back! What do you need?"
     print(f"Aria: {greeting}")
     voice.speak(greeting)
 
@@ -56,6 +57,7 @@ def main():
             reply = agent.chat(text)
             print(f"Aria: {reply}")
             voice.speak(reply)
+            agent.save()
 
         except KeyboardInterrupt:
             print("\nBye!")

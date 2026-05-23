@@ -1,5 +1,9 @@
+import json
+import os
 import anthropic
 from tools import web_search, read_file, write_file, get_datetime, run_python
+
+MEMORY_FILE = os.path.join(os.path.dirname(__file__), "memory.json")
 
 TOOLS = [
     {
@@ -107,5 +111,17 @@ class Agent:
             self.history.append({"role": "assistant", "content": text})
             return text
 
+    def save(self):
+        with open(MEMORY_FILE, "w") as f:
+            json.dump(self.history, f)
+
+    def load(self):
+        if os.path.exists(MEMORY_FILE):
+            with open(MEMORY_FILE) as f:
+                self.history = json.load(f)
+            print(f"Loaded {len(self.history)} messages from memory.")
+
     def reset(self):
         self.history.clear()
+        if os.path.exists(MEMORY_FILE):
+            os.remove(MEMORY_FILE)
