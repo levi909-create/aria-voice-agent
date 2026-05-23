@@ -13,13 +13,13 @@ TTS_RATE = 22050
 
 
 class VoiceIO:
-    def __init__(self, elevenlabs_api_key: str, voice_id: str, whisper_model: str = "base"):
+    def __init__(self, elevenlabs_api_key: str, voice_id: str, whisper_model: str = "tiny"):
         print("Loading Whisper model...")
         self.whisper = WhisperModel(whisper_model, device="cpu", compute_type="int8")
         self.eleven = ElevenLabs(api_key=elevenlabs_api_key)
         self.voice_id = voice_id
 
-    def record(self, silence_secs: float = 1.5, threshold: float = 0.015, max_secs: float = 30) -> np.ndarray | None:
+    def record(self, silence_secs: float = 0.8, threshold: float = 0.015, max_secs: float = 30) -> np.ndarray | None:
         """Record from mic until silence is detected after speech."""
         print("\nListening... (speak now)")
         chunks: list[np.ndarray] = []
