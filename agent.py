@@ -190,14 +190,20 @@ class Agent:
             return text
 
     def save(self):
-        with open(MEMORY_FILE, "w") as f:
+        tmp = MEMORY_FILE + ".tmp"
+        with open(tmp, "w") as f:
             json.dump(self.history, f)
+        os.replace(tmp, MEMORY_FILE)
 
     def load(self):
         if os.path.exists(MEMORY_FILE):
-            with open(MEMORY_FILE) as f:
-                self.history = json.load(f)
-            print(f"Loaded {len(self.history)} messages from memory.")
+            try:
+                with open(MEMORY_FILE) as f:
+                    self.history = json.load(f)
+                print(f"Loaded {len(self.history)} messages from memory.")
+            except (json.JSONDecodeError, ValueError):
+                print("Memory file was corrupted — starting fresh.")
+                os.remove(MEMORY_FILE)
 
     def reset(self):
         self.history.clear()
