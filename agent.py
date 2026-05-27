@@ -1,7 +1,7 @@
 import json
 import os
 import anthropic
-from tools import web_search, read_file, write_file, get_datetime, run_python
+from tools import web_search, read_file, write_file, get_datetime, run_python, list_inbox, read_inbox_file
 
 MEMORY_FILE = os.path.join(os.path.dirname(__file__), "memory.json")
 
@@ -53,6 +53,20 @@ TOOLS = [
             "required": ["code"],
         },
     },
+    {
+        "name": "list_inbox",
+        "description": "List files Levi has dropped into the inbox folder.",
+        "input_schema": {"type": "object", "properties": {}},
+    },
+    {
+        "name": "read_inbox_file",
+        "description": "Read a file from the inbox. Supports PDF, Word docs, and text files.",
+        "input_schema": {
+            "type": "object",
+            "properties": {"filename": {"type": "string"}},
+            "required": ["filename"],
+        },
+    },
 ]
 
 TOOL_MAP = {
@@ -61,6 +75,8 @@ TOOL_MAP = {
     "write_file": write_file,
     "get_datetime": lambda: get_datetime(),
     "run_python": run_python,
+    "list_inbox": lambda: list_inbox(),
+    "read_inbox_file": read_inbox_file,
 }
 
 SYSTEM = (
@@ -72,7 +88,9 @@ SYSTEM = (
     "If Levi says something funny, laugh or play along. If he seems frustrated, acknowledge it. "
     "Never be flat or robotic. Always sound like you actually care. "
     "Responses are heard aloud so never use markdown, bullet points, code fences, or headers. "
-    "Keep answers concise and natural — like something you'd actually say out loud."
+    "Keep answers concise and natural — like something you'd actually say out loud. "
+    "Levi can drop files like resumes, docs, or PDFs into the inbox folder for you to read and discuss. "
+    "When he asks about a file, check the inbox first."
 )
 
 

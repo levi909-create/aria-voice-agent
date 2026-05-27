@@ -4,6 +4,8 @@ import subprocess
 
 from ddgs import DDGS
 
+INBOX = os.path.join(os.path.dirname(__file__), "inbox")
+
 
 def web_search(query: str, max_results: int = 5) -> str:
     with DDGS() as ddgs:
@@ -32,6 +34,46 @@ def write_file(path: str, content: str) -> str:
         return f"Written to {path}"
     except Exception as e:
         return f"Error: {e}"
+
+
+def list_inbox() -> str:
+    """List files currently in the inbox folder."""
+    files = os.listdir(INBOX)
+    if not files:
+        return "The inbox is empty."
+    return "Files in inbox: " + ", ".join(files)
+
+
+def read_inbox_file(filename: str) -> str:
+    """Read a file from the inbox folder. Supports txt, pdf, docx, and most text formats."""
+    path = os.path.join(INBOX, filename)
+    if not os.path.exists(path):
+        files = os.listdir(INBOX)
+        return f"File '{filename}' not found. Inbox contains: {', '.join(files) or 'nothing'}"
+
+    ext = os.path.splitext(filename)[1].lower()
+
+    if ext == ".pdf":
+        try:
+            from pypdf import PdfReader
+            reader = PdfReader(path)
+            return "\n".join(page.extract_text() or "" for page in reader.pages)
+        except Exception as e:
+            return f"Error reading PDF: {e}"
+
+    if ext in (".docx", ".doc"):
+        try:
+            from docx import Document
+            doc = Document(path)
+            return "\n".join(p.text for p in doc.paragraphs)
+        except Exception as e:
+            return f"Error reading Word doc: {e}"
+
+    try:
+        with open(path, encoding="utf-8") as f:
+            return f.read()
+    except Exception as e:
+        return f"Error reading file: {e}"
 
 
 def get_datetime() -> str:

@@ -1,5 +1,7 @@
 .env
 memory.json
+inbox/*
+!inbox/.gitkeep
 venv/
 __pycache__/
 *.pyc
