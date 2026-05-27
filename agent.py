@@ -1,7 +1,11 @@
 import json
 import os
 import anthropic
-from tools import web_search, read_file, write_file, get_datetime, run_python, list_inbox, read_inbox_file
+from tools import (
+    web_search, read_file, write_file, get_datetime, run_python,
+    list_inbox, read_inbox_file,
+    open_app, open_url, take_screenshot, list_directory, get_clipboard, set_clipboard,
+)
 
 MEMORY_FILE = os.path.join(os.path.dirname(__file__), "memory.json")
 
@@ -67,6 +71,51 @@ TOOLS = [
             "required": ["filename"],
         },
     },
+    {
+        "name": "open_app",
+        "description": "Open an application on Levi's computer (e.g. chrome, spotify, notepad, calculator).",
+        "input_schema": {
+            "type": "object",
+            "properties": {"name": {"type": "string"}},
+            "required": ["name"],
+        },
+    },
+    {
+        "name": "open_url",
+        "description": "Open a website in the browser.",
+        "input_schema": {
+            "type": "object",
+            "properties": {"url": {"type": "string"}},
+            "required": ["url"],
+        },
+    },
+    {
+        "name": "take_screenshot",
+        "description": "Take a screenshot of Levi's screen and save it to the inbox.",
+        "input_schema": {"type": "object", "properties": {}},
+    },
+    {
+        "name": "list_directory",
+        "description": "Browse files and folders on Levi's computer.",
+        "input_schema": {
+            "type": "object",
+            "properties": {"path": {"type": "string", "description": "Folder path to list"}},
+        },
+    },
+    {
+        "name": "get_clipboard",
+        "description": "Read whatever text is currently on Levi's clipboard.",
+        "input_schema": {"type": "object", "properties": {}},
+    },
+    {
+        "name": "set_clipboard",
+        "description": "Write text to Levi's clipboard so he can paste it anywhere.",
+        "input_schema": {
+            "type": "object",
+            "properties": {"text": {"type": "string"}},
+            "required": ["text"],
+        },
+    },
 ]
 
 TOOL_MAP = {
@@ -77,6 +126,12 @@ TOOL_MAP = {
     "run_python": run_python,
     "list_inbox": lambda: list_inbox(),
     "read_inbox_file": read_inbox_file,
+    "open_app": open_app,
+    "open_url": open_url,
+    "take_screenshot": lambda: take_screenshot(),
+    "list_directory": list_directory,
+    "get_clipboard": lambda: get_clipboard(),
+    "set_clipboard": set_clipboard,
 }
 
 SYSTEM = (
