@@ -67,6 +67,12 @@ class VoiceIO:
             text=text,
             model_id="eleven_turbo_v2_5",
             output_format="pcm_22050",
+            voice_settings={
+                "stability": 0.35,
+                "similarity_boost": 0.85,
+                "style": 0.60,
+                "use_speaker_boost": True,
+            },
         )
         audio_bytes = b"".join(audio_iter)
         audio = np.frombuffer(audio_bytes, dtype=np.int16).astype(np.float32) / 32768.0
