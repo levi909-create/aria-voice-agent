@@ -25,14 +25,13 @@ def main():
     agent = Agent(api_key=anthropic_key)
     agent.load()
 
-    print("\nAria is ready. Say 'Hey Aria' to wake her up.\n")
-    greeting = "Hey Levi! Say hey Aria whenever you need me." if not agent.history else "Hey, I'm back! Say hey Aria whenever you're ready."
+    print("\nAria is ready. Start speaking!\n")
+    greeting = "Hey Levi! What can I help you with?" if not agent.history else "Hey, I'm back! What do you need?"
     print(f"Aria: {greeting}")
     voice.speak(greeting)
 
     while True:
         try:
-            voice.wait_for_wake_word()
             audio = voice.record()
             if audio is None:
                 continue

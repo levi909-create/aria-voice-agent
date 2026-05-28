@@ -1,13 +1,12 @@
 import os
 import tempfile
-import time
-import winsound
 import numpy as np
 
 import scipy.io.wavfile as wav
 import sounddevice as sd
 from faster_whisper import WhisperModel
 from elevenlabs.client import ElevenLabs
+
 
 SAMPLE_RATE = 16000
 BLOCK_SIZE = 1024
@@ -20,22 +19,6 @@ class VoiceIO:
         self.whisper = WhisperModel(whisper_model, device="cpu", compute_type="int8")
         self.eleven = ElevenLabs(api_key=elevenlabs_api_key)
         self.voice_id = voice_id
-
-    def wait_for_wake_word(self) -> None:
-        """Listen in 2-second bursts until wake word is heard."""
-        WAKE_WORDS = {"aria", "hey aria", "area", "hey area", "haria"}
-        print("Waiting for 'Hey Aria'...")
-        while True:
-            audio = sd.rec(int(2.0 * SAMPLE_RATE), samplerate=SAMPLE_RATE, channels=1, dtype="float32")
-            sd.wait()
-            audio = audio.flatten()
-            if float(np.abs(audio).mean()) < 0.003:
-                continue
-            text = self.transcribe(audio).lower()
-            if any(w in text for w in WAKE_WORDS):
-                winsound.Beep(880, 120)
-                time.sleep(0.15)
-                return
 
     def record(self, silence_secs: float = 0.8, threshold: float = 0.008, max_secs: float = 30) -> np.ndarray | None:
         """Record from mic until silence is detected after speech."""
