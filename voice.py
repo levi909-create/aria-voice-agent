@@ -17,6 +17,9 @@ TTS_RATE = 22050
 
 
 EDGE_VOICE = "en-US-AriaNeural"
+EDGE_RATE  = "+20%"   # speak 20% faster
+EDGE_VOL   = "+100%"  # maximum volume
+_loop      = asyncio.new_event_loop()
 
 
 class VoiceIO:
@@ -86,9 +89,12 @@ class VoiceIO:
         with tempfile.NamedTemporaryFile(suffix=".mp3", delete=False) as f:
             path = f.name
         try:
-            asyncio.run(edge_tts.Communicate(text, EDGE_VOICE).save(path))
+            _loop.run_until_complete(
+                edge_tts.Communicate(text, EDGE_VOICE, rate=EDGE_RATE, volume=EDGE_VOL).save(path)
+            )
             decoded = miniaudio.decode_file(path)
             audio = np.array(decoded.samples, dtype=np.int16).astype(np.float32) / 32768.0
+            audio = np.clip(audio * 2.5, -1.0, 1.0)  # amplify
             sd.play(audio, samplerate=decoded.sample_rate, device="Microsoft Sound Mapper - Output")
             sd.wait()
         finally:
