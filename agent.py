@@ -302,10 +302,22 @@ class Agent:
             self.history.append({"role": "assistant", "content": text})
             return text
 
+    def _serializable(self):
+        result = []
+        for msg in self.history:
+            content = msg["content"]
+            if isinstance(content, list):
+                content = [
+                    block.model_dump() if hasattr(block, "model_dump") else block
+                    for block in content
+                ]
+            result.append({"role": msg["role"], "content": content})
+        return result
+
     def save(self):
         tmp = MEMORY_FILE + ".tmp"
         with open(tmp, "w") as f:
-            json.dump(self.history, f)
+            json.dump(self._serializable(), f)
         os.replace(tmp, MEMORY_FILE)
 
     def load(self):
