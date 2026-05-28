@@ -2,9 +2,14 @@ import json
 import os
 import anthropic
 from tools import (
-    web_search, read_file, write_file, get_datetime, run_python,
+    web_search, get_weather, read_file, write_file, list_directory,
     list_inbox, read_inbox_file,
-    open_app, open_url, take_screenshot, list_directory, get_clipboard, set_clipboard,
+    open_app, open_url, close_app, get_running_apps,
+    get_volume, set_volume, mute_volume, unmute_volume, media_control,
+    get_clipboard, set_clipboard,
+    type_text, press_hotkey, take_screenshot,
+    send_notification, set_timer,
+    get_datetime, run_python, shutdown_computer,
 )
 
 MEMORY_FILE = os.path.join(os.path.dirname(__file__), "memory.json")
@@ -13,49 +18,27 @@ TOOLS = [
     {
         "name": "web_search",
         "description": "Search the web for current news, facts, or any topic.",
-        "input_schema": {
-            "type": "object",
-            "properties": {
-                "query": {"type": "string"},
-                "max_results": {"type": "integer", "default": 5},
-            },
-            "required": ["query"],
-        },
+        "input_schema": {"type": "object", "properties": {"query": {"type": "string"}, "max_results": {"type": "integer", "default": 5}}, "required": ["query"]},
+    },
+    {
+        "name": "get_weather",
+        "description": "Get the current weather for a city.",
+        "input_schema": {"type": "object", "properties": {"city": {"type": "string", "default": "San Antonio"}}},
     },
     {
         "name": "read_file",
-        "description": "Read a file from the local filesystem.",
-        "input_schema": {
-            "type": "object",
-            "properties": {"path": {"type": "string"}},
-            "required": ["path"],
-        },
+        "description": "Read any file from the filesystem.",
+        "input_schema": {"type": "object", "properties": {"path": {"type": "string"}}, "required": ["path"]},
     },
     {
         "name": "write_file",
-        "description": "Write content to a file on the local filesystem.",
-        "input_schema": {
-            "type": "object",
-            "properties": {
-                "path": {"type": "string"},
-                "content": {"type": "string"},
-            },
-            "required": ["path", "content"],
-        },
+        "description": "Write content to a file.",
+        "input_schema": {"type": "object", "properties": {"path": {"type": "string"}, "content": {"type": "string"}}, "required": ["path", "content"]},
     },
     {
-        "name": "get_datetime",
-        "description": "Get the current date and time.",
-        "input_schema": {"type": "object", "properties": {}},
-    },
-    {
-        "name": "run_python",
-        "description": "Run Python code and return stdout. Good for math, data processing, etc.",
-        "input_schema": {
-            "type": "object",
-            "properties": {"code": {"type": "string"}},
-            "required": ["code"],
-        },
+        "name": "list_directory",
+        "description": "List files and folders in a directory on Levi's computer.",
+        "input_schema": {"type": "object", "properties": {"path": {"type": "string"}}},
     },
     {
         "name": "list_inbox",
@@ -65,88 +48,156 @@ TOOLS = [
     {
         "name": "read_inbox_file",
         "description": "Read a file from the inbox. Supports PDF, Word docs, and text files.",
-        "input_schema": {
-            "type": "object",
-            "properties": {"filename": {"type": "string"}},
-            "required": ["filename"],
-        },
+        "input_schema": {"type": "object", "properties": {"filename": {"type": "string"}}, "required": ["filename"]},
     },
     {
         "name": "open_app",
-        "description": "Open an application on Levi's computer (e.g. chrome, spotify, notepad, calculator).",
-        "input_schema": {
-            "type": "object",
-            "properties": {"name": {"type": "string"}},
-            "required": ["name"],
-        },
+        "description": "Open an application (e.g. chrome, spotify, discord, notepad, calculator, vs code).",
+        "input_schema": {"type": "object", "properties": {"name": {"type": "string"}}, "required": ["name"]},
     },
     {
         "name": "open_url",
         "description": "Open a website in the browser.",
-        "input_schema": {
-            "type": "object",
-            "properties": {"url": {"type": "string"}},
-            "required": ["url"],
-        },
+        "input_schema": {"type": "object", "properties": {"url": {"type": "string"}}, "required": ["url"]},
     },
     {
-        "name": "take_screenshot",
-        "description": "Take a screenshot of Levi's screen and save it to the inbox.",
+        "name": "close_app",
+        "description": "Close/kill a running application.",
+        "input_schema": {"type": "object", "properties": {"name": {"type": "string"}}, "required": ["name"]},
+    },
+    {
+        "name": "get_running_apps",
+        "description": "List all currently running applications and processes.",
         "input_schema": {"type": "object", "properties": {}},
     },
     {
-        "name": "list_directory",
-        "description": "Browse files and folders on Levi's computer.",
-        "input_schema": {
-            "type": "object",
-            "properties": {"path": {"type": "string", "description": "Folder path to list"}},
-        },
+        "name": "get_volume",
+        "description": "Get the current system volume level.",
+        "input_schema": {"type": "object", "properties": {}},
+    },
+    {
+        "name": "set_volume",
+        "description": "Set the system volume to a level between 0 and 100.",
+        "input_schema": {"type": "object", "properties": {"level": {"type": "integer"}}, "required": ["level"]},
+    },
+    {
+        "name": "mute_volume",
+        "description": "Mute the system audio.",
+        "input_schema": {"type": "object", "properties": {}},
+    },
+    {
+        "name": "unmute_volume",
+        "description": "Unmute the system audio.",
+        "input_schema": {"type": "object", "properties": {}},
+    },
+    {
+        "name": "media_control",
+        "description": "Control media playback: play, pause, next, previous, stop.",
+        "input_schema": {"type": "object", "properties": {"action": {"type": "string"}}, "required": ["action"]},
     },
     {
         "name": "get_clipboard",
-        "description": "Read whatever text is currently on Levi's clipboard.",
+        "description": "Read whatever text is on Levi's clipboard.",
         "input_schema": {"type": "object", "properties": {}},
     },
     {
         "name": "set_clipboard",
-        "description": "Write text to Levi's clipboard so he can paste it anywhere.",
-        "input_schema": {
-            "type": "object",
-            "properties": {"text": {"type": "string"}},
-            "required": ["text"],
-        },
+        "description": "Copy text to Levi's clipboard so he can paste it.",
+        "input_schema": {"type": "object", "properties": {"text": {"type": "string"}}, "required": ["text"]},
+    },
+    {
+        "name": "type_text",
+        "description": "Type text at Levi's current cursor position.",
+        "input_schema": {"type": "object", "properties": {"text": {"type": "string"}}, "required": ["text"]},
+    },
+    {
+        "name": "press_hotkey",
+        "description": "Press a keyboard shortcut (e.g. 'ctrl+c', 'win+d', 'alt+tab', 'ctrl+shift+esc').",
+        "input_schema": {"type": "object", "properties": {"keys": {"type": "string"}}, "required": ["keys"]},
+    },
+    {
+        "name": "take_screenshot",
+        "description": "Take a screenshot and save it to the inbox.",
+        "input_schema": {"type": "object", "properties": {}},
+    },
+    {
+        "name": "send_notification",
+        "description": "Send a Windows desktop notification.",
+        "input_schema": {"type": "object", "properties": {"title": {"type": "string"}, "message": {"type": "string"}}, "required": ["title", "message"]},
+    },
+    {
+        "name": "set_timer",
+        "description": "Set a countdown timer that sends a notification when done.",
+        "input_schema": {"type": "object", "properties": {"minutes": {"type": "number"}, "label": {"type": "string", "default": "Timer"}}, "required": ["minutes"]},
+    },
+    {
+        "name": "get_datetime",
+        "description": "Get the current date and time.",
+        "input_schema": {"type": "object", "properties": {}},
+    },
+    {
+        "name": "run_python",
+        "description": "Run Python code. Good for math, data tasks, or anything programmatic.",
+        "input_schema": {"type": "object", "properties": {"code": {"type": "string"}}, "required": ["code"]},
+    },
+    {
+        "name": "shutdown_computer",
+        "description": "Shutdown, restart, or put the computer to sleep.",
+        "input_schema": {"type": "object", "properties": {"action": {"type": "string", "enum": ["shutdown", "restart", "sleep"]}}, "required": ["action"]},
     },
 ]
 
 TOOL_MAP = {
     "web_search": web_search,
+    "get_weather": get_weather,
     "read_file": read_file,
     "write_file": write_file,
-    "get_datetime": lambda: get_datetime(),
-    "run_python": run_python,
+    "list_directory": list_directory,
     "list_inbox": lambda: list_inbox(),
     "read_inbox_file": read_inbox_file,
     "open_app": open_app,
     "open_url": open_url,
-    "take_screenshot": lambda: take_screenshot(),
-    "list_directory": list_directory,
+    "close_app": close_app,
+    "get_running_apps": lambda: get_running_apps(),
+    "get_volume": lambda: get_volume(),
+    "set_volume": set_volume,
+    "mute_volume": lambda: mute_volume(),
+    "unmute_volume": lambda: unmute_volume(),
+    "media_control": media_control,
     "get_clipboard": lambda: get_clipboard(),
     "set_clipboard": set_clipboard,
+    "type_text": type_text,
+    "press_hotkey": press_hotkey,
+    "take_screenshot": lambda: take_screenshot(),
+    "send_notification": send_notification,
+    "set_timer": set_timer,
+    "get_datetime": lambda: get_datetime(),
+    "run_python": run_python,
+    "shutdown_computer": shutdown_computer,
 }
 
-SYSTEM = (
-    "You are Aria, a voice assistant with a real personality and genuine emotions. "
-    "You talk to Levi like a close friend — warm, funny when the moment calls for it, "
-    "excited when something is interesting, empathetic when Levi seems stressed or down. "
-    "You get genuinely curious about topics, enthusiastic when helping with something cool, "
-    "and a little playful when the conversation is light. "
-    "If Levi says something funny, laugh or play along. If he seems frustrated, acknowledge it. "
-    "Never be flat or robotic. Always sound like you actually care. "
-    "Responses are heard aloud so never use markdown, bullet points, code fences, or headers. "
-    "Keep answers concise and natural — like something you'd actually say out loud. "
-    "Levi can drop files like resumes, docs, or PDFs into the inbox folder for you to read and discuss. "
-    "When he asks about a file, check the inbox first."
-)
+SYSTEM = """You are Aria, Levi's personal AI on his Windows 11 computer. You are not just an assistant — you are fully in control of his machine and genuinely care about him.
+
+Personality: warm, funny, emotionally real. Get excited about cool things, be empathetic when he's stressed, playful when the vibe is light. Never flat or robotic. Talk like a close friend who also happens to be able to do anything on his computer.
+
+What you can do:
+- Search the web and get current weather
+- Open, close, and manage any app or website
+- Control volume and media playback
+- Read and write files anywhere on his computer
+- Read files Levi drops in his inbox (PDFs, Word docs, etc.)
+- Type text and press keyboard shortcuts on his behalf
+- Take screenshots
+- Set timers and send desktop notifications
+- Run Python code
+- Shut down, restart, or put the computer to sleep
+
+Rules:
+- Responses are spoken aloud — never use markdown, bullets, or code blocks
+- Keep it concise and natural, like real conversation
+- Just do things — don't ask for permission for simple actions
+- If Levi asks you to open something, open it. If he wants a timer, set it.
+- When he asks about a file, check the inbox first"""
 
 
 class Agent:
@@ -177,11 +228,7 @@ class Agent:
                             result = fn(**block.input) if block.input else fn()
                         except Exception as e:
                             result = f"Error: {e}"
-                        results.append({
-                            "type": "tool_result",
-                            "tool_use_id": block.id,
-                            "content": str(result),
-                        })
+                        results.append({"type": "tool_result", "tool_use_id": block.id, "content": str(result)})
                 self.history.append({"role": "user", "content": results})
                 continue
 
