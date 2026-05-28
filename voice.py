@@ -21,22 +21,23 @@ class VoiceIO:
         self.eleven = ElevenLabs(api_key=elevenlabs_api_key)
         self.voice_id = voice_id
 
-    def wait_for_wake_word(self, wake_word: str = "aria") -> None:
+    def wait_for_wake_word(self) -> None:
         """Listen in 2-second bursts until wake word is heard."""
+        WAKE_WORDS = {"aria", "hey aria", "area", "hey area", "haria"}
         print("Waiting for 'Hey Aria'...")
         while True:
             audio = sd.rec(int(2.0 * SAMPLE_RATE), samplerate=SAMPLE_RATE, channels=1, dtype="float32")
             sd.wait()
             audio = audio.flatten()
-            if float(np.abs(audio).mean()) < 0.005:
+            if float(np.abs(audio).mean()) < 0.003:
                 continue
-            text = self.transcribe(audio)
-            if wake_word.lower() in text.lower():
+            text = self.transcribe(audio).lower()
+            if any(w in text for w in WAKE_WORDS):
                 winsound.Beep(880, 120)
-                time.sleep(0.15)  # let the beep finish before recording starts
+                time.sleep(0.15)
                 return
 
-    def record(self, silence_secs: float = 0.8, threshold: float = 0.015, max_secs: float = 30) -> np.ndarray | None:
+    def record(self, silence_secs: float = 0.8, threshold: float = 0.008, max_secs: float = 30) -> np.ndarray | None:
         """Record from mic until silence is detected after speech."""
         print("\nListening... (speak now)")
         chunks: list[np.ndarray] = []
