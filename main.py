@@ -13,11 +13,15 @@ GOODBYE_WORDS = {"goodbye", "bye"}
 
 def main():
     anthropic_key = os.getenv("ANTHROPIC_API_KEY")
+    elevenlabs_key = os.getenv("ELEVENLABS_API_KEY")
+    voice_id = os.getenv("ELEVENLABS_VOICE_ID", "EXAVITQu4vr4xnSDxMaL")
 
     if not anthropic_key:
         sys.exit("Missing ANTHROPIC_API_KEY in .env")
+    if not elevenlabs_key:
+        sys.exit("Missing ELEVENLABS_API_KEY in .env")
 
-    voice = VoiceIO()
+    voice = VoiceIO(elevenlabs_api_key=elevenlabs_key, voice_id=voice_id)
     agent = Agent(api_key=anthropic_key)
     agent.load()
 
