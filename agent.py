@@ -1,6 +1,11 @@
 import json
 import os
 import anthropic
+from browser import (
+    browser_goto, browser_click, browser_fill, browser_get_text,
+    browser_get_url, browser_scroll, browser_press_enter,
+    browser_screenshot, browser_wait, browser_close,
+)
 from tools import (
     web_search, get_weather, read_file, write_file, list_directory,
     list_inbox, read_inbox_file,
@@ -145,6 +150,56 @@ TOOLS = [
         "description": "Shutdown, restart, or put the computer to sleep.",
         "input_schema": {"type": "object", "properties": {"action": {"type": "string", "enum": ["shutdown", "restart", "sleep"]}}, "required": ["action"]},
     },
+    {
+        "name": "browser_goto",
+        "description": "Open a URL in a visible browser window.",
+        "input_schema": {"type": "object", "properties": {"url": {"type": "string"}}, "required": ["url"]},
+    },
+    {
+        "name": "browser_click",
+        "description": "Click a button, link, or element on the current web page by its visible text or label.",
+        "input_schema": {"type": "object", "properties": {"text": {"type": "string"}}, "required": ["text"]},
+    },
+    {
+        "name": "browser_fill",
+        "description": "Fill in a form field on the current web page.",
+        "input_schema": {"type": "object", "properties": {"field": {"type": "string"}, "value": {"type": "string"}}, "required": ["field", "value"]},
+    },
+    {
+        "name": "browser_get_text",
+        "description": "Read the visible text content of the current web page.",
+        "input_schema": {"type": "object", "properties": {}},
+    },
+    {
+        "name": "browser_get_url",
+        "description": "Get the current URL of the browser.",
+        "input_schema": {"type": "object", "properties": {}},
+    },
+    {
+        "name": "browser_scroll",
+        "description": "Scroll the web page up or down.",
+        "input_schema": {"type": "object", "properties": {"direction": {"type": "string", "enum": ["down", "up"]}}, "required": ["direction"]},
+    },
+    {
+        "name": "browser_press_enter",
+        "description": "Press Enter on the current web page (e.g. to submit a search or form).",
+        "input_schema": {"type": "object", "properties": {}},
+    },
+    {
+        "name": "browser_screenshot",
+        "description": "Take a screenshot of the current browser page and save to inbox.",
+        "input_schema": {"type": "object", "properties": {}},
+    },
+    {
+        "name": "browser_wait",
+        "description": "Wait for a page to load or an action to complete.",
+        "input_schema": {"type": "object", "properties": {"seconds": {"type": "number", "default": 2}}},
+    },
+    {
+        "name": "browser_close",
+        "description": "Close the browser when done with web tasks.",
+        "input_schema": {"type": "object", "properties": {}},
+    },
 ]
 
 TOOL_MAP = {
@@ -174,6 +229,16 @@ TOOL_MAP = {
     "get_datetime": lambda: get_datetime(),
     "run_python": run_python,
     "shutdown_computer": shutdown_computer,
+    "browser_goto": browser_goto,
+    "browser_click": browser_click,
+    "browser_fill": browser_fill,
+    "browser_get_text": lambda: browser_get_text(),
+    "browser_get_url": lambda: browser_get_url(),
+    "browser_scroll": browser_scroll,
+    "browser_press_enter": lambda: browser_press_enter(),
+    "browser_screenshot": lambda: browser_screenshot(),
+    "browser_wait": browser_wait,
+    "browser_close": lambda: browser_close(),
 }
 
 SYSTEM = """You are Aria, Levi's personal AI on his Windows 11 computer. You are not just an assistant — you are fully in control of his machine and genuinely care about him.
@@ -191,6 +256,7 @@ What you can do:
 - Set timers and send desktop notifications
 - Run Python code
 - Shut down, restart, or put the computer to sleep
+- Control a real browser: navigate pages, click buttons, fill forms, read content, take screenshots
 
 Rules:
 - Responses are spoken aloud — never use markdown, bullets, or code blocks
