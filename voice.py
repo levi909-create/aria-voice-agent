@@ -4,22 +4,25 @@ import time
 import winsound
 import numpy as np
 
+import asyncio
+import miniaudio
 import scipy.io.wavfile as wav
 import sounddevice as sd
 from faster_whisper import WhisperModel
-from elevenlabs.client import ElevenLabs
+import edge_tts
 
 SAMPLE_RATE = 16000
 BLOCK_SIZE = 1024
 TTS_RATE = 22050
 
 
+EDGE_VOICE = "en-US-AriaNeural"
+
+
 class VoiceIO:
-    def __init__(self, elevenlabs_api_key: str, voice_id: str, whisper_model: str = "tiny"):
+    def __init__(self, whisper_model: str = "tiny"):
         print("Loading Whisper model...")
         self.whisper = WhisperModel(whisper_model, device="cpu", compute_type="int8")
-        self.eleven = ElevenLabs(api_key=elevenlabs_api_key)
-        self.voice_id = voice_id
 
     def wait_for_wake_word(self) -> None:
         """Listen in 2-second bursts until wake word is heard."""
@@ -79,21 +82,14 @@ class VoiceIO:
             os.unlink(path)
 
     def speak(self, text: str):
-        """Convert text to speech using ElevenLabs and play it via sounddevice."""
-        audio_iter = self.eleven.text_to_speech.convert(
-            voice_id=self.voice_id,
-            text=text,
-            model_id="eleven_turbo_v2_5",
-            output_format="pcm_22050",
-            voice_settings={
-                "stability": 0.35,
-                "similarity_boost": 0.85,
-                "style": 0.60,
-                "use_speaker_boost": True,
-            },
-        )
-        audio_bytes = b"".join(audio_iter)
-        audio = np.frombuffer(audio_bytes, dtype=np.int16).astype(np.float32) / 32768.0
-        # Use Microsoft Sound Mapper so playback follows the Windows default audio device
-        sd.play(audio, samplerate=TTS_RATE, device="Microsoft Sound Mapper - Output")
-        sd.wait()
+        """Convert text to speech using Edge TTS and play via sounddevice."""
+        with tempfile.NamedTemporaryFile(suffix=".mp3", delete=False) as f:
+            path = f.name
+        try:
+            asyncio.run(edge_tts.Communicate(text, EDGE_VOICE).save(path))
+            decoded = miniaudio.decode_file(path)
+            audio = np.array(decoded.samples, dtype=np.int16).astype(np.float32) / 32768.0
+            sd.play(audio, samplerate=decoded.sample_rate, device="Microsoft Sound Mapper - Output")
+            sd.wait()
+        finally:
+            os.unlink(path)
